@@ -9,6 +9,7 @@ import aiohttp
 from aiogram import Bot
 from aiogram.enums import ParseMode
 from dotenv import load_dotenv
+from aiogram.client.default import DefaultBotProperties
 
 load_dotenv()
 
@@ -76,14 +77,19 @@ async def summary(bot, chat, session):
         if t.startswith("UZB"):
             lines.append(f"<b>{i}</b>. <i>{UZB[t]}</i> — <code>{s:.2f}</code> {medal}")
 
-    duration = datetime.datetime.now() - (datetime.datetime.now().replace(hour=19, minute=0, second=0, microsecond=0))
+    duration = datetime.datetime.now() - (datetime.datetime.now().replace(hour=19, minute=0, second=0, microsecond=0) - datetime.timedelta(hours=0))
+    duration = str(duration)[:7]
+    duration = str(int(duration[:2]) - 14) + duration[2:]
     msg = f"<b>🏅 Scoreboard</b> ({duration})\n\n"
     msg += "\n".join(lines)
     await bot.send_message(chat, msg)
 
 
 async def runner():
-    bot = Bot(os.environ["BOT_TOKEN"], parse_mode=ParseMode.HTML)
+    bot = Bot(
+        token=os.environ["BOT_TOKEN"],
+        default=DefaultBotProperties(parse_mode=ParseMode.HTML)
+    )
     chat = os.environ["CHAT_ID"]
     store = Store()
     store.load()
@@ -105,12 +111,12 @@ async def runner():
                     total = sum(store.best[team].values())
                     t = datetime.datetime.fromtimestamp(ts, datetime.timezone.utc).time()
                     msg = f"[{t.hour}:{t.minute:02}:{t.second:02}]: {UZB[team]} submitted {task} for {pts:.2f} points\nTotal: {total:.2f}"
-                    # await bot.send_message(chat, msg)
+                    await bot.send_message(chat, msg)
                     store.count += 1
                 if fresh:
                     store.remember(tuple(d) for d in fresh)
                     store.last_ts = max(store.last_ts, max(x[2] for x in fresh))
-                if store.count >= 10 or 1:
+                if store.count >= 10:
                     await summary(bot, chat, session)
                     store.count = 0
                     exit()
