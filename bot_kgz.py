@@ -13,16 +13,16 @@ from aiogram.client.default import DefaultBotProperties
 
 load_dotenv()
 
-UZB = {
-    "UZB1": "Asilbek Sunnatov",
-    "UZB2": "Ulug'bek Rahmatullayev",
-    "UZB3": "Sardor Salimov",
-    "UZB4": "Timur Kadirbergenov",
+KGZ = {
+    "KGZ1": "Alihan Aidarbekov",
+    # "KGZ2": "Ulug'bek Rahmatullayev",
+    "KGZ3": "Abdullahan Abdirasulov",
+    "KGZ4": "Ali Arapov",
 }
 
 HISTORY = "https://ranking.ioi2025.bo/history"
 SCORES = "https://ranking.ioi2025.bo/scores"
-FILE = Path("sent.json")
+FILE = Path("sent_kgz.json")
 POLL = 10
 
 
@@ -74,8 +74,8 @@ async def summary(bot, chat, session):
         else:
             medal = ""
 
-        if t.startswith("UZB"):
-            lines.append(f"<b>{i}</b>. <i>{UZB[t]}</i> — <code>{s:.2f}</code> {medal}")
+        if t.startswith("KGZ"):
+            lines.append(f"<b>{i}</b>. <i>{KGZ[t]}</i> — <code>{s:.2f}</code> {medal}")
 
     duration = datetime.datetime.now() - (datetime.datetime.now().replace(hour=19, minute=0, second=0, microsecond=0))
     msg = f"<b>🏅 Scoreboard</b> ({str(duration)[:7]})\n\n"
@@ -88,7 +88,7 @@ async def runner():
         token=os.environ["BOT_TOKEN"],
         default=DefaultBotProperties(parse_mode=ParseMode.HTML)
     )
-    chat = os.environ["CHAT_ID"]
+    chat = "-1002815493497"
     store = Store()
     store.load()
     async with aiohttp.ClientSession() as session:
@@ -101,11 +101,11 @@ async def runner():
                 async with session.get(SCORES) as r:
                     raw = await r.json(content_type=None)
 
-                fresh = [d for d in data if tuple(d) not in store.sent and d[2] > store.last_ts and d[0] in UZB]
+                fresh = [d for d in data if tuple(d) not in store.sent and d[2] > store.last_ts and d[0] in KGZ]
                 fresh.sort(key=lambda x: x[2])
                 fresh = fresh[:10]
                 for team, task, ts, pts in fresh:
-                    if team not in UZB:
+                    if team not in KGZ:
                         continue
 
                     totals = {k: sum(v.values()) for k, v in raw.items()}
@@ -120,7 +120,7 @@ async def runner():
                         store.best[team][task] = pts
 
                     t = datetime.datetime.fromtimestamp(ts, datetime.timezone.utc).time()
-                    msg = f"[{t.hour - 14}:{t.minute:02}:{t.second:02}]: {UZB[team]} submitted {task} for {pts:.2f} points\nTotal: {total:.2f}"
+                    msg = f"[{t.hour - 14}:{t.minute:02}:{t.second:02}]: {KGZ[team]} submitted {task} for {pts:.2f} points\nTotal: {total:.2f}"
                     await bot.send_message(chat, msg)
                     store.count += 1
                 if fresh:
